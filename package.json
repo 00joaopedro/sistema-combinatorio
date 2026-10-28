@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "description": "Sistema combinatório para a Lotofácil",
-  "engines": { "node": ">=20.18.0 <25" },
+  "engines": { "node": ">=22 <25" },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
+    "sync": "node dist/database/sync-cli.js",
     "test": "npm run build && node --test test/*.test.cjs"
   },
-  "dependencies": { "better-sqlite3": "^11.8.1" },
+  "dependencies": { "better-sqlite3": "^13.0.3" },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
