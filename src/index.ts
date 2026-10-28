@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { openDatabase } from './database/db.js';
 
 const portText = process.env.PORT ?? '3000';
 if (!/^\d+$/.test(portText) || Number(portText) < 1 || Number(portText) > 65535) {
@@ -14,6 +15,10 @@ const assets: Record<string, { file: string; type: string }> = {
   '/css/styles.css': { file: 'css/styles.css', type: 'text/css; charset=utf-8' },
   '/js/app.js': { file: 'js/app.js', type: 'text/javascript; charset=utf-8' },
 };
+
+// Inicializa o banco uma vez; a sincronização é executada separadamente.
+const db = openDatabase();
+process.on('exit', () => db.close());
 
 const server = createServer(async (req, res) => {
   let pathname: string;

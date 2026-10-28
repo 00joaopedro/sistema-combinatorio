@@ -3,6 +3,9 @@ const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const net = require('node:net');
 const http = require('node:http');
+const { mkdtempSync, rmSync } = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 async function freePort() {
   const socket = net.createServer();
@@ -14,8 +17,16 @@ async function freePort() {
 
 test('servidor usa PORT, entrega a página, arquivos e API de saúde', async t => {
   const port = await freePort();
-  const child = spawn(process.execPath, ['dist/index.js'], { env: { ...process.env, PORT: String(port) }, stdio: 'ignore' });
-  t.after(() => child.kill());
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'lotofacil-server-'));
+  const child = spawn(process.execPath, ['dist/index.js'], { env: { ...process.env, PORT: String(port), DATA_DIR: dir }, stdio: 'ignore' });
+  t.after(async () => {
+    if (child.exitCode === null && child.signalCode === null) {
+      const closed = new Promise(resolve => child.once('exit', resolve));
+      child.kill();
+      await closed;
+    }
+    rmSync(dir, { recursive: true, force: true });
+  });
   const base = `http://127.0.0.1:${port}`;
   let health;
   for (let i = 0; i < 50; i++) {
