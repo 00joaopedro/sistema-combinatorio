@@ -28,7 +28,7 @@ O comando consulta a Caixa e salva os concursos ausentes, priorizando os mais re
 
 ## Railway
 
-Para manter o SQLite entre deploys, adicione um volume persistente ao serviço, por exemplo montado em `/data`, e configure `DATA_DIR=/data` no mesmo serviço. O diretório configurado e o ponto de montagem do volume devem coincidir. O banco é criado quando o servidor inicia; o volume não está disponível durante o build. Execute `npm run sync` no ambiente do serviço em execução, por exemplo pelo terminal do serviço, após o deploy; isso não é feito automaticamente. Verifique nos logs se a Caixa está acessível e se a sincronização terminou sem erros. O volume requer backup separado e o serviço deve usar uma única instância com esse banco local.
+Para manter o SQLite entre deploys, adicione um volume persistente ao serviço, por exemplo montado em `/data`, e configure `DATA_DIR=/data` no mesmo serviço. O diretório configurado e o ponto de montagem do volume devem coincidir. O banco é criado quando o servidor inicia; o volume não está disponível durante o build. Execute `npm run sync` dentro do contêiner do serviço em execução, por exemplo conectando-se com `railway ssh` e depois executando o comando; isso não é feito automaticamente. `railway run` executa comandos na máquina local e não acessa o arquivo do volume remoto. Verifique nos logs se a Caixa está acessível e se a sincronização terminou sem erros. O volume requer backup separado e o serviço deve usar uma única instância com esse banco local.
 
 ## API de frequência
 
@@ -51,3 +51,13 @@ Se a quantidade ultrapassar as combinações possíveis, a API retorna erro 422 
 ## Interface
 
 Na página inicial, informe de 1 a 200 concursos e clique em **Carregar informações** para consultar a frequência dos dados salvos. No gerador, as dezenas fixas e excluídas são opcionais; selecione até 12 fixas e 10 excluídas, escolha de 1 a 10 jogos e clique em **Criar cartelas**. Cada novo clique cria outro grupo, acessível pelos controles de navegação. Os grupos permanecem apenas enquanto a página estiver aberta e os jogos podem se repetir entre grupos.
+
+## Verificação após o deploy
+
+1. Confirme no serviço Railway que o volume está montado em `/data` e que `DATA_DIR=/data` aponta para ele. Configure também o healthcheck em `/api/health`.
+2. Após o deploy, acesse o terminal **remoto** do serviço e execute `npm run sync`. A primeira execução busca todo o histórico e pode demorar. Se falhar, tente novamente e confira os logs. Não há atualização automática: repita esse comando para atualizar os concursos.
+3. Na página, teste a frequência e a geração de até 10 cartelas. Confira a data e o número do concurso mais recente exibido.
+4. Com o volume configurado, reinicie o serviço e confira se a mesma análise continua disponível. Após uma atualização de código, repita a conferência. O teste automatizado simula reinício local com diretório persistente; não substitui essa verificação no Railway.
+5. Configure backups para o volume e teste a restauração conforme a necessidade. O volume e os arquivos do SQLite não estão no Git.
+
+Para testar o navegador localmente, instale Playwright e Chromium separadamente; o GitHub Actions executa `node --test test-browser/*.test.cjs` com os navegadores e dependências necessários.

@@ -39,5 +39,7 @@ jobs:
         run: |
           npm install --no-save --package-lock=false playwright@1.58.2
           npx playwright install --with-deps chromium
+      - name: Compilar servidor
+        run: npm run build
       - name: Testar interface no navegador
         run: node --test test-browser/*.test.cjs

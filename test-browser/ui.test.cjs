@@ -68,3 +68,21 @@ test('interface móvel valida entradas, chama APIs e navega entre grupos', async
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
   assert.deepEqual(jsErrors, []);
 });
+
+test('interface também é utilizável em tela de computador', async t => {
+  mode = 'normal';
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] }); t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(`http://127.0.0.1:${server.address().port}/`);
+  await page.locator('#frequency-submit').click();
+  await page.locator('#frequency-results').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.frequency-item').count(), 25);
+  await page.locator('#ticket-count').fill('10'); await page.locator('#tickets-submit').click();
+  await page.locator('#tickets-results').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('.ticket').count(), 10);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+  assert.deepEqual(errors, []);
+});
