@@ -1,0 +1,20 @@
+{
+  "name": "sistema-combinatorio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema combinatório para a Lotofácil",
+  "engines": { "node": ">=20.18.0 <25" },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "test": "npm run build && node --test test/*.test.cjs"
+  },
+  "dependencies": { "better-sqlite3": "^11.8.1" },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}
