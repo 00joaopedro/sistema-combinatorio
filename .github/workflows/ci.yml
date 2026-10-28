@@ -26,3 +26,18 @@ jobs:
         run: node -e "const Database = require('better-sqlite3'); const db = new Database(':memory:'); if (db.prepare('select 1 as value').get().value !== 1) process.exit(1); db.close();"
       - name: Compilar e testar
         run: npm test
+
+  browser:
+    name: Interface mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar navegador de testes
+        run: |
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Testar interface no navegador
+        run: node --test test-browser/*.test.cjs
