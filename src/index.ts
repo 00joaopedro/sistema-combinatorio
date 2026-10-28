@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { openDatabase } from './database/db.js';
+import { getFrequencyAnalysis } from './services/statistics.service.js';
 
 const portText = process.env.PORT ?? '3000';
 if (!/^\d+$/.test(portText) || Number(portText) < 1 || Number(portText) > 65535) {
@@ -21,9 +22,9 @@ const db = openDatabase();
 process.on('exit', () => db.close());
 
 const server = createServer(async (req, res) => {
-  let pathname: string;
+  let url: URL;
   try {
-    pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+    url = new URL(req.url ?? '/', 'http://localhost');
   } catch {
     res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ error: 'URL inválida.' }));
@@ -34,9 +35,28 @@ const server = createServer(async (req, res) => {
     res.end(JSON.stringify({ error: 'Método não permitido.' }));
     return;
   }
+  const pathname = url.pathname;
   if (pathname === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ status: 'ok' }));
+    return;
+  }
+  if (pathname === '/api/statistics') {
+    const limits = url.searchParams.getAll('limit');
+    if (limits.length !== 1 || !/^[0-9]+$/.test(limits[0]) || Number(limits[0]) < 1 || Number(limits[0]) > 200) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ error: 'Informe limit como um número inteiro entre 1 e 200.' }));
+      return;
+    }
+    try {
+      const analysis = getFrequencyAnalysis(db, Number(limits[0]));
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(req.method === 'HEAD' ? undefined : JSON.stringify(analysis));
+    } catch (error) {
+      console.error('Erro ao consultar frequência:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ error: 'Não foi possível consultar as frequências.' }));
+    }
     return;
   }
   const asset = Object.hasOwn(assets, pathname) ? assets[pathname] : undefined;

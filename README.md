@@ -29,3 +29,9 @@ O comando consulta a Caixa e salva os concursos ausentes, priorizando os mais re
 ## Railway
 
 Para manter o SQLite entre deploys, adicione um volume persistente ao serviço, por exemplo montado em `/data`, e configure `DATA_DIR=/data` no mesmo serviço. O diretório configurado e o ponto de montagem do volume devem coincidir. O banco é criado quando o servidor inicia; o volume não está disponível durante o build. Execute `npm run sync` no ambiente do serviço em execução, por exemplo pelo terminal do serviço, após o deploy; isso não é feito automaticamente. Verifique nos logs se a Caixa está acessível e se a sincronização terminou sem erros. O volume requer backup separado e o serviço deve usar uma única instância com esse banco local.
+
+## API de frequência
+
+`GET /api/statistics?limit=100` calcula as frequências dos últimos concursos **presentes no banco**. `limit` é obrigatório e deve ser um inteiro de 1 a 200. A resposta contém `quantidadeSolicitada`, `quantidadeAnalisada`, `concursoMaisRecente`, `dadosIncompletos`, `possuiLacunas`, `aviso` e `dezenas`. Cada dezena contém `dezena`, `aparicoes` e `frequenciaPercentual`, calculada sobre a quantidade efetivamente analisada e arredondada a duas casas decimais. Os resultados são ordenados por maior frequência e, em caso de empate, pela dezena.
+
+Se não houver concursos, `dezenas` é uma lista vazia e a resposta contém um aviso. Um intervalo com lacunas ou quantidade menor do que a pedida também recebe aviso; as frequências continuam calculadas apenas com os concursos disponíveis. A API não verifica se a Caixa possui um concurso mais recente que o banco: execute a sincronização antes de consultar para atualizá-lo. Frequências passadas não preveem resultados futuros.
