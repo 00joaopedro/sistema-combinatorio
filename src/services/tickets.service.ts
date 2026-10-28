@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
 
-export const MAX_TICKETS = 10_000;
+export const MAX_TICKETS = 10;
 export class TicketInputError extends Error {
   constructor(message: string, public readonly status = 400) { super(message); }
 }

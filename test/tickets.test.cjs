@@ -19,29 +19,29 @@ function check(result, fixed, excluded) {
 }
 
 test('gera todas as combinações possíveis sem repetir e respeita as dezenas fixas e excluídas', () => {
-  const fixed = [1, 2, 3];
+  const fixed = Array.from({length:12}, (_,i) => i+1);
   const excluded = [18,19,20,21,22,23,24,25];
-  const result = generateTickets({ fixas: fixed, excluidas: excluded, quantidade: 91 });
-  assert.equal(result.totalCombinacoesPossiveis, 91);
-  assert.equal(result.cartelas.length, 91);
+  const result = generateTickets({ fixas: fixed, excluidas: excluded, quantidade: 10 });
+  assert.equal(result.totalCombinacoesPossiveis, 10);
+  assert.equal(result.cartelas.length, 10);
   check(result, fixed, excluded);
 });
 
 test('aceita extremos dos filtros e calcula o número exato de combinações', () => {
-  const result = generateTickets({ fixas: Array.from({length:12}, (_,i) => i+1), excluidas: [25], quantidade: 100 });
+  const result = generateTickets({ fixas: Array.from({length:12}, (_,i) => i+1), excluidas: [25], quantidade: 10 });
   assert.equal(result.totalCombinacoesPossiveis, 220);
   check(result, Array.from({length:12}, (_,i) => i+1), [25]);
   const only = generateTickets({ excluidas: [16,17,18,19,20,21,22,23,24,25], quantidade: 1 });
   assert.equal(only.totalCombinacoesPossiveis, 1);
   assert.deepEqual(only.cartelas[0], Array.from({length:15}, (_,i) => i+1));
-  const unrestricted = generateTickets({ quantidade: 100 });
+  const unrestricted = generateTickets({ quantidade: 10 });
   assert.equal(unrestricted.totalCombinacoesPossiveis, 3268760);
   check(unrestricted, [], []);
 });
 
 test('gera o limite permitido sem duplicar cartelas', () => {
-  const result = generateTickets({ quantidade: 10000 });
-  assert.equal(result.cartelas.length, 10000);
+  const result = generateTickets({ quantidade: 10 });
+  assert.equal(result.cartelas.length, 10);
   check(result, [], []);
 });
 
@@ -54,7 +54,7 @@ test('rejeita parâmetros inválidos, sobreposição e quantidade impossível', 
     assert.throws(() => generateTickets(x));
   }
   assert.throws(() => generateTickets({ quantidade: 2, excluidas: [16,17,18,19,20,21,22,23,24,25] }), /1 combinações possíveis/);
-  assert.throws(() => generateTickets({ quantidade: 10001 }), /limite/i);
+  assert.throws(() => generateTickets({ quantidade: 11 }), /limite/i);
 });
 
 async function getPort() {
@@ -81,8 +81,10 @@ test('API valida método, formato, limites e entrega as cartelas solicitadas', a
   assert.equal((await send(' '.repeat(9000))).status, 413);
   const invalid = await send(JSON.stringify({ quantidade: 2, excluidas: [16,17,18,19,20,21,22,23,24,25] }));
   assert.equal(invalid.status, 422); assert.match((await invalid.json()).error, /1 combinações possíveis/);
-  const response = await send(JSON.stringify({ fixas:[1,2], excluidas:[25], quantidade:15 }));
+  const overLimit = await send(JSON.stringify({ quantidade: 11 }));
+  assert.equal(overLimit.status, 400); assert.match((await overLimit.json()).error, /10 cartelas/);
+  const response = await send(JSON.stringify({ fixas:[1,2], excluidas:[25], quantidade:10 }));
   assert.equal(response.status, 200);
-  const result = await response.json(); assert.equal(result.cartelas.length, 15); check(result, [1,2], [25]);
+  const result = await response.json(); assert.equal(result.cartelas.length, 10); check(result, [1,2], [25]);
   assert.equal((await fetch(base + '/api/health')).status, 200);
 });
