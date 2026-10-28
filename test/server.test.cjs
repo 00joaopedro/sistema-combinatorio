@@ -2,6 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const net = require('node:net');
+const http = require('node:http');
 
 async function freePort() {
   const socket = net.createServer();
@@ -23,6 +24,15 @@ test('servidor usa PORT, entrega a página, arquivos e API de saúde', async t =
   }
   assert.ok(health, 'servidor não iniciou');
   assert.deepEqual(await health.json(), { status: 'ok' });
+  const invalidStatus = await new Promise((resolve, reject) => {
+    const request = http.get({ host: '127.0.0.1', port, path: '//' }, response => {
+      response.resume();
+      response.on('end', () => resolve(response.statusCode));
+    });
+    request.on('error', reject);
+  });
+  assert.equal(invalidStatus, 400);
+  assert.equal((await fetch(`${base}/api/health`)).status, 200);
   const page = await fetch(base);
   assert.equal(page.status, 200);
   assert.match(await page.text(), /Sistema Combinatório/);

@@ -16,7 +16,14 @@ const assets: Record<string, { file: string; type: string }> = {
 };
 
 const server = createServer(async (req, res) => {
-  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  let pathname: string;
+  try {
+    pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ error: 'URL inválida.' }));
+    return;
+  }
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { Allow: 'GET, HEAD', 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: 'Método não permitido.' }));
