@@ -35,3 +35,15 @@ Para manter o SQLite entre deploys, adicione um volume persistente ao serviço, 
 `GET /api/statistics?limit=100` calcula as frequências dos últimos concursos **presentes no banco**. `limit` é obrigatório e deve ser um inteiro de 1 a 200. A resposta contém `quantidadeSolicitada`, `quantidadeAnalisada`, `concursoMaisRecente`, `dadosIncompletos`, `possuiLacunas`, `aviso` e `dezenas`. Cada dezena contém `dezena`, `aparicoes` e `frequenciaPercentual`, calculada sobre a quantidade efetivamente analisada e arredondada a duas casas decimais. Os resultados são ordenados por maior frequência e, em caso de empate, pela dezena.
 
 Se não houver concursos, `dezenas` é uma lista vazia e a resposta contém um aviso. Um intervalo com lacunas ou quantidade menor do que a pedida também recebe aviso; as frequências continuam calculadas apenas com os concursos disponíveis. A API não verifica se a Caixa possui um concurso mais recente que o banco: execute a sincronização antes de consultar para atualizá-lo. Frequências passadas não preveem resultados futuros.
+
+## API de cartelas
+
+`POST /api/tickets` recebe `Content-Type: application/json`. Exemplo:
+
+```json
+{"excluidas":[24,25],"fixas":[1,2,3],"quantidade":10}
+```
+
+As listas são opcionais e aceitam até 10 dezenas excluídas e 12 fixas, como inteiros de 1 a 25 sem repetição nem sobreposição. `quantidade` é obrigatória, inteira e positiva. A resposta informa `quantidadeSolicitada`, `totalCombinacoesPossiveis` e `cartelas`: cada jogo tem 15 dezenas, em ordem crescente, e não há duplicados na mesma resposta. Cada solicitação gera de 1 a 10 jogos. Uma nova solicitação gera outra seleção; os resultados não são salvos no servidor e podem se repetir entre solicitações.
+
+Se a quantidade ultrapassar as combinações possíveis, a API retorna erro 422 com o total disponível. Para controlar o uso de recursos, há um limite de 10 cartelas por solicitação, um ajuste desta versão. Os jogos são escolhidos aleatoriamente entre as combinações válidas; o gerador não utiliza matriz de fechamento e não garante premiação.
