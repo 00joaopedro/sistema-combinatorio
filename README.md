@@ -4,7 +4,7 @@ Base do sistema para Lotofácil. A página inicial e o banco de concursos estão
 
 ## Requisitos e execução
 
-Node.js 20.18 ou superior (até a versão 24), npm e, quando não houver binário do better-sqlite3 disponível para a plataforma, ferramentas de compilação nativa.
+Node.js 22 ou 24, npm e, quando não houver binário do better-sqlite3 disponível para a plataforma, ferramentas de compilação nativa.
 
 ```sh
 npm ci

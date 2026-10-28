@@ -14,14 +14,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22, 24]
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
       - name: Instalar dependências
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
+      - name: Disponibilizar lockfile
+        if: matrix.node == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock-pr2
+          path: package-lock.json
       - name: Verificar SQLite nativo
         run: node -e "const Database = require('better-sqlite3'); const db = new Database(':memory:'); if (db.prepare('select 1 as value').get().value !== 1) process.exit(1); db.close();"
       - name: Compilar e testar
