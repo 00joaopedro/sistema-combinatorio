@@ -1,6 +1,6 @@
 # Sistema Combinatório
 
-Base do sistema para Lotofácil. A página inicial e o banco de concursos estão disponíveis; as estatísticas e o gerador de cartelas serão implementados nos próximos PRs.
+Sistema para Lotofácil com análise de frequência e gerador de cartelas. A interface permite criar até 10 jogos por vez e navegar entre os grupos criados durante a sessão.
 
 ## Requisitos e execução
 
@@ -47,3 +47,7 @@ Se não houver concursos, `dezenas` é uma lista vazia e a resposta contém um a
 As listas são opcionais e aceitam até 10 dezenas excluídas e 12 fixas, como inteiros de 1 a 25 sem repetição nem sobreposição. `quantidade` é obrigatória, inteira e positiva. A resposta informa `quantidadeSolicitada`, `totalCombinacoesPossiveis` e `cartelas`: cada jogo tem 15 dezenas, em ordem crescente, e não há duplicados na mesma resposta. Cada solicitação gera de 1 a 10 jogos. Uma nova solicitação gera outra seleção; os resultados não são salvos no servidor e podem se repetir entre solicitações.
 
 Se a quantidade ultrapassar as combinações possíveis, a API retorna erro 422 com o total disponível. Para controlar o uso de recursos, há um limite de 10 cartelas por solicitação, um ajuste desta versão. Os jogos são escolhidos aleatoriamente entre as combinações válidas; o gerador não utiliza matriz de fechamento e não garante premiação.
+
+## Interface
+
+Na página inicial, informe de 1 a 200 concursos e clique em **Carregar informações** para consultar a frequência dos dados salvos. No gerador, as dezenas fixas e excluídas são opcionais; selecione até 12 fixas e 10 excluídas, escolha de 1 a 10 jogos e clique em **Criar cartelas**. Cada novo clique cria outro grupo, acessível pelos controles de navegação. Os grupos permanecem apenas enquanto a página estiver aberta e os jogos podem se repetir entre grupos.

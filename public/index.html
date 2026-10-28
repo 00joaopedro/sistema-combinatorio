@@ -9,20 +9,43 @@
   <script src="/js/app.js" defer></script>
 </head>
 <body>
-  <main class="container">
-    <header>
-      <p class="eyebrow">LOTOFÁCIL</p>
-      <h1>Sistema Combinatório</h1>
-      <p>Consulte estatísticas e prepare suas cartelas em um só lugar.</p>
-    </header>
-    <section aria-labelledby="frequencia">
-      <span class="number" aria-hidden="true">01</span>
-      <div><h2 id="frequencia">Frequência das dezenas</h2><p>Em breve, consulte os resultados dos últimos concursos.</p></div>
+  <header class="topbar"><div class="shell"><span class="brand-mark" aria-hidden="true">SC</span><span class="brand-name">SISTEMA COMBINATÓRIO</span><span class="topbar-note">LOTOFÁCIL</span></div></header>
+  <main class="shell main-content">
+    <div class="intro"><p class="eyebrow">SEU ESPAÇO DE JOGOS</p><h1>Sistema<br>Combinatório<span class="period">.</span></h1><p>Analise os últimos concursos e monte suas cartelas do seu jeito.</p></div>
+    <section class="panel" aria-labelledby="frequency-title">
+      <div class="section-heading"><span class="section-number" aria-hidden="true">01</span><div><p class="eyebrow">OLHE PARA OS RESULTADOS</p><h2 id="frequency-title">Frequência das dezenas</h2></div></div>
+      <p class="section-description">Veja quantas vezes cada número apareceu nos concursos recentes.</p>
+      <form id="frequency-form" novalidate>
+        <label for="draw-count">Quantidade de concursos <span class="label-hint">1 a 200</span></label>
+        <div class="form-row"><input id="draw-count" name="draw-count" type="number" inputmode="numeric" min="1" max="200" step="1" value="100" required><button class="button button-primary" id="frequency-submit" type="submit">Carregar informações <span aria-hidden="true">↗</span></button></div>
+      </form>
+      <p id="frequency-message" class="message" role="status" aria-live="polite"></p>
+      <div id="frequency-results" hidden>
+        <div class="results-heading"><div><span class="results-kicker">RESULTADO DA ANÁLISE</span><h3>Frequência por dezena</h3></div><span class="result-tag">25 NÚMEROS</span></div>
+        <p id="frequency-summary" class="summary"></p><p id="frequency-warning" class="notice" hidden></p>
+        <div id="frequency-grid" class="frequency-grid"></div>
+        <p class="footnote">Frequências anteriores não garantem resultados futuros.</p>
+      </div>
     </section>
-    <section aria-labelledby="cartelas">
-      <span class="number" aria-hidden="true">02</span>
-      <div><h2 id="cartelas">Gerador de cartelas</h2><p>Em breve, crie jogos com as dezenas de sua escolha.</p></div>
+    <section class="panel" aria-labelledby="tickets-title">
+      <div class="section-heading"><span class="section-number" aria-hidden="true">02</span><div><p class="eyebrow">FAÇA SUAS COMBINAÇÕES</p><h2 id="tickets-title">Gerador de cartelas</h2></div></div>
+      <p class="section-description">Escolha o que entra, o que fica de fora e crie seus jogos.</p>
+      <form id="tickets-form" novalidate>
+        <fieldset><legend>Dezenas excluídas <span class="optional">OPCIONAL</span></legend><p class="field-help">Selecione até 10 números que não devem aparecer.</p><div class="selection-top"><span>Toque para selecionar</span><span id="excluded-count">0 / 10</span></div><div id="excluded-grid" class="number-grid" role="group" aria-label="Selecionar dezenas excluídas"></div></fieldset>
+        <fieldset><legend>Dezenas fixas <span class="optional">OPCIONAL</span></legend><p class="field-help">Selecione até 12 números que devem estar em todos os jogos.</p><div class="selection-top"><span>Toque para selecionar</span><span id="fixed-count">0 / 12</span></div><div id="fixed-grid" class="number-grid" role="group" aria-label="Selecionar dezenas fixas"></div></fieldset>
+        <label for="ticket-count">Quantidade de jogos <span class="label-hint">1 a 10 por vez</span></label>
+        <div class="form-row"><input id="ticket-count" name="ticket-count" type="number" inputmode="numeric" min="1" max="10" step="1" value="10" required><button class="button button-primary" id="tickets-submit" type="submit">Criar cartelas <span aria-hidden="true">↗</span></button></div>
+      </form>
+      <p id="tickets-message" class="message" role="status" aria-live="polite"></p>
+      <div id="tickets-results" hidden>
+        <div class="results-heading"><div><span class="results-kicker">SUAS COMBINAÇÕES</span><h3>Cartelas geradas</h3></div><span class="result-tag">15 DEZENAS</span></div>
+        <p class="summary">Cada página mostra um grupo criado. Os jogos podem se repetir entre grupos.</p>
+        <div id="tickets-list" class="tickets-list"></div>
+        <nav class="pagination" aria-label="Navegação entre grupos de cartelas"><button id="previous-page" class="button button-outline" type="button">← Anterior</button><span id="page-indicator" aria-live="polite"></span><button id="next-page" class="button button-outline" type="button">Próxima →</button></nav>
+        <p class="footnote">As combinações não garantem premiação e não são apostas registradas.</p>
+      </div>
     </section>
+    <footer><span>SISTEMA COMBINATÓRIO</span><span>Jogue com responsabilidade.</span></footer>
   </main>
 </body>
 </html>
