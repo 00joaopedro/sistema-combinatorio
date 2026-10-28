@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { openDatabase } from './database/db.js';
 import { getFrequencyAnalysis } from './services/statistics.service.js';
+import { generateTickets, TicketInputError } from './services/tickets.service.js';
 
 const portText = process.env.PORT ?? '3000';
 if (!/^\d+$/.test(portText) || Number(portText) < 1 || Number(portText) > 65535) {
@@ -30,12 +31,51 @@ const server = createServer(async (req, res) => {
     res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ error: 'URL inválida.' }));
     return;
   }
+  const pathname = url.pathname;
+  if (pathname === '/api/tickets') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { Allow: 'POST', 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ error: 'Método não permitido.' }));
+      return;
+    }
+    if (!/^application\/json(?:\s*;|\s*$)/i.test(req.headers['content-type'] ?? '')) {
+      res.writeHead(415, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({ error: 'Envie o corpo como application/json.' }));
+      return;
+    }
+    try {
+      const chunks: Buffer[] = [];
+      let length = 0;
+      for await (const chunk of req.iterator({ destroyOnReturn: false })) {
+        const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        length += bytes.length;
+        if (length > 8192) { req.resume(); throw new TicketInputError('Corpo da solicitação excede 8 KB.', 413); }
+        chunks.push(bytes);
+      }
+      let input: unknown;
+      try { input = JSON.parse(Buffer.concat(chunks).toString('utf8')); }
+      catch { throw new TicketInputError('JSON inválido.'); }
+      const result = generateTickets(input);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify(result));
+    } catch (error) {
+      if (error instanceof TicketInputError) {
+        res.writeHead(error.status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ error: error.message }));
+      } else {
+        console.error('Erro ao gerar cartelas:', error);
+        if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ error: 'Não foi possível gerar as cartelas.' }));
+      }
+    }
+    return;
+  }
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { Allow: 'GET, HEAD', 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: 'Método não permitido.' }));
     return;
   }
-  const pathname = url.pathname;
+
   if (pathname === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ status: 'ok' }));
