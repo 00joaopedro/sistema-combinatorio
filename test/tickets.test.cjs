@@ -39,6 +39,12 @@ test('aceita extremos dos filtros e calcula o número exato de combinações', (
   check(unrestricted, [], []);
 });
 
+test('gera o limite permitido sem duplicar cartelas', () => {
+  const result = generateTickets({ quantidade: 10000 });
+  assert.equal(result.cartelas.length, 10000);
+  check(result, [], []);
+});
+
 test('rejeita parâmetros inválidos, sobreposição e quantidade impossível', () => {
   for (const x of [null, [], {}, { quantidade: 0 }, { quantidade: 1.5 }, { quantidade: '1' },
     { quantidade: 1, fixas: null }, { quantidade: 1, fixas: [1, 1] },
