@@ -40,7 +40,7 @@
         <fieldset><legend>Dezenas fixas <span class="optional">OPCIONAL</span></legend><p class="field-help">Selecione até 12 números que devem estar em todos os jogos.</p><div class="selection-top"><span>Toque para selecionar</span><span id="fixed-count">0 / 12</span></div><div id="fixed-grid" class="number-grid" role="group" aria-label="Selecionar dezenas fixas"></div></fieldset>
         </div>
         <div id="finals-options" hidden>
-          <p class="field-help">Marque os padrões que não devem aparecer nos seus jogos. As dezenas de finais 6 a 0 continuam livres.</p>
+          <p class="field-help">Marque os padrões exatos que não devem aparecer. Excluir um par não exclui o trio; marque “Todas” para excluir também o trio. As dezenas de finais 6 a 0 continuam livres.</p>
           <div class="final-tabs" id="final-tabs" role="group" aria-label="Selecionar final"></div>
           <p id="finals-summary" class="selection-top">Finais configurados: 0 de 5</p>
           <div id="final-patterns"></div>
@@ -52,7 +52,7 @@
       <div id="tickets-results" hidden>
         <div class="results-heading"><div><span class="results-kicker">SUAS COMBINAÇÕES</span><h3>Cartelas geradas</h3></div><span class="result-tag">15 DEZENAS</span></div>
         <p class="summary">Cada página mostra um grupo criado. Os jogos podem se repetir entre grupos.</p>
-        <p id="ticket-combinations" class="summary"></p><div id="tickets-list" class="tickets-list"></div>
+        <p id="ticket-combinations" class="summary"></p><p id="batch-rules" class="notice"></p><p id="batch-changed" class="notice" hidden role="status"></p><div id="tickets-list" class="tickets-list"></div>
         <nav class="pagination" aria-label="Navegação entre grupos de cartelas"><button id="previous-page" class="button button-outline" type="button">← Anterior</button><span id="page-indicator" aria-live="polite"></span><button id="next-page" class="button button-outline" type="button">Próxima →</button></nav>
         <p class="footnote">As combinações não garantem premiação e não são apostas registradas.</p>
       </div>
@@ -61,3 +61,4 @@
   </main>
 </body>
 </html>
+
