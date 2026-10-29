@@ -31,3 +31,24 @@ test('rejeita dados inválidos sem afetar o modo clássico', () => {
   const classic=require('../dist/services/tickets.service.js').generateTickets({quantidade:2,fixas:[1],excluidas:[25]});
   assert.ok(classic.cartelas.every(t=>t.includes(1)&&!t.includes(25)));
 });
+
+
+test('bloqueia o par 11 + 21 isolado, permite o trio e combina regras de finais diferentes', () => {
+  const rules = [
+    { column: 1, excludePatterns: ['pair_2_3'] },
+    { column: 2, excludePatterns: ['only_second', 'pair_1_3'] },
+  ];
+  for (let i = 0; i < 200; i++) {
+    const result = generateFinalsTickets({ quantidade: 10, columnRules: rules });
+    for (const ticket of result.cartelas) {
+      const group1 = [1,11,21].filter(n => ticket.includes(n)).join(',');
+      const group2 = [2,12,22].filter(n => ticket.includes(n)).join(',');
+      assert.notEqual(group1, '11,21');
+      assert.notEqual(group2, '12');
+      assert.notEqual(group2, '2,22');
+    }
+  }
+  const onlyTriple = patterns.filter(p => p !== 'all_three');
+  const result = generateFinalsTickets({ quantidade: 10, columnRules: [{ column: 1, excludePatterns: onlyTriple }] });
+  assert.ok(result.cartelas.every(ticket => [1,11,21].every(n => ticket.includes(n))));
+});

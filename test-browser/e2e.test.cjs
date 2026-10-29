@@ -59,6 +59,26 @@ test('navegador usa frontend, APIs e SQLite reais', async t => {
     assert.ok([1,11,21].some(n=>values.includes(n)));
   }
   assert.match(await page.locator('#ticket-combinations').innerText(), /Combinações possíveis/);
+  // Cada grupo conserva as regras com que foi criado mesmo após alterações posteriores.
+  assert.match(await page.locator('#batch-rules').innerText(), /Final 1: Nenhum/);
+  await page.locator('#final-patterns input[value="pair_2_3"]').check();
+  assert.match(await page.locator('#batch-changed').innerText(), /diferentes/);
+  await page.locator('#final-tabs button').nth(1).click();
+  await page.locator('#final-patterns input[value="only_second"]').check();
+  await page.locator('#tickets-submit').click();
+  await page.waitForFunction(() => document.querySelector('#page-indicator').textContent === 'Grupo 3 de 3');
+  assert.match(await page.locator('#batch-rules').innerText(), /Final 1:.*Somente 11 \+ 21 \(sem 01\)/);
+  assert.match(await page.locator('#batch-rules').innerText(), /Final 2: Apenas 12/);
+  assert.equal(await page.locator('#batch-changed').isHidden(), true);
+  for (const ticket of await page.locator('.ticket').all()) {
+    const values = (await ticket.locator('.ticket-number').allTextContents()).map(Number);
+    assert.ok(!(!values.includes(1) && values.includes(11) && values.includes(21)));
+    assert.ok(!(values.includes(12) && !values.includes(2) && !values.includes(22)));
+  }
+  await page.locator('#previous-page').click();
+  assert.match(await page.locator('#batch-changed').innerText(), /diferentes/);
+
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
 
 });
+
