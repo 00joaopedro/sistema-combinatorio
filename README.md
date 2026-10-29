@@ -61,3 +61,7 @@ Na página inicial, informe de 1 a 200 concursos e clique em **Carregar informa�
 5. Configure backups para o volume e teste a restauração conforme a necessidade. O volume e os arquivos do SQLite não estão no Git.
 
 Para testar o navegador localmente, instale Playwright e Chromium separadamente; o GitHub Actions executa `node --test test-browser/*.test.cjs` com os navegadores e dependências necessários.
+
+## Modo finais
+
+`POST /api/tickets/finais` recebe `quantidade` (1 a 10) e `columnRules`, por exemplo `{ "quantidade": 10, "columnRules": [{ "column": 1, "excludePatterns": ["none", "only_first"] }] }`. Cada grupo (1 a 5) contém as dezenas N, N+10 e N+20. Os padrões permitidos são `none`, `only_first`, `only_second`, `only_third`, `pair_1_2`, `pair_1_3`, `pair_2_3` e `all_three`; cada item escolhido exclui o padrão exato. Dezenas com finais de 6 a 0 são livres. A resposta inclui o número de combinações possíveis e jogos únicos por solicitação. Se as regras não comportarem a quantidade solicitada, o servidor retorna 422. O modo clássico permanece independente.

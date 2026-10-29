@@ -48,4 +48,17 @@ test('navegador usa frontend, APIs e SQLite reais', async t => {
     assert.equal(numbers.length,15); assert.ok(numbers.includes(1)); assert.ok(!numbers.includes(25)); keys.add(numbers.join(','));
   }
   assert.equal(keys.size,10);
+  await page.locator('#finals-mode').click();
+  assert.equal(await page.locator('#classic-options').isHidden(), true);
+  await page.locator('#final-patterns input[value="none"]').check();
+  assert.match(await page.locator('#finals-summary').innerText(), /1 de 5/);
+  await page.locator('#tickets-submit').click();
+  await page.waitForFunction(() => document.querySelector('#page-indicator').textContent === 'Grupo 2 de 2');
+  for (const ticket of await page.locator('.ticket').all()) {
+    const values=(await ticket.locator('.ticket-number').allTextContents()).map(Number);
+    assert.ok([1,11,21].some(n=>values.includes(n)));
+  }
+  assert.match(await page.locator('#ticket-combinations').innerText(), /Combinações possíveis/);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+
 });

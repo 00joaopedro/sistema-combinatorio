@@ -30,9 +30,21 @@
     <section class="panel" aria-labelledby="tickets-title">
       <div class="section-heading"><span class="section-number" aria-hidden="true">02</span><div><p class="eyebrow">FAÇA SUAS COMBINAÇÕES</p><h2 id="tickets-title">Gerador de cartelas</h2></div></div>
       <p class="section-description">Escolha o que entra, o que fica de fora e crie seus jogos.</p>
+      <div class="mode-switch" role="group" aria-label="Modo de geração">
+        <button type="button" id="classic-mode" class="mode-button" aria-pressed="true">Modo clássico</button>
+        <button type="button" id="finals-mode" class="mode-button" aria-pressed="false">Modo finais</button>
+      </div>
       <form id="tickets-form" novalidate>
+        <div id="classic-options">
         <fieldset><legend>Dezenas excluídas <span class="optional">OPCIONAL</span></legend><p class="field-help">Selecione até 10 números que não devem aparecer.</p><div class="selection-top"><span>Toque para selecionar</span><span id="excluded-count">0 / 10</span></div><div id="excluded-grid" class="number-grid" role="group" aria-label="Selecionar dezenas excluídas"></div></fieldset>
         <fieldset><legend>Dezenas fixas <span class="optional">OPCIONAL</span></legend><p class="field-help">Selecione até 12 números que devem estar em todos os jogos.</p><div class="selection-top"><span>Toque para selecionar</span><span id="fixed-count">0 / 12</span></div><div id="fixed-grid" class="number-grid" role="group" aria-label="Selecionar dezenas fixas"></div></fieldset>
+        </div>
+        <div id="finals-options" hidden>
+          <p class="field-help">Marque os padrões que não devem aparecer nos seus jogos. As dezenas de finais 6 a 0 continuam livres.</p>
+          <div class="final-tabs" id="final-tabs" role="group" aria-label="Selecionar final"></div>
+          <p id="finals-summary" class="selection-top">Finais configurados: 0 de 5</p>
+          <div id="final-patterns"></div>
+        </div>
         <label for="ticket-count">Quantidade de jogos <span class="label-hint">1 a 10 por vez</span></label>
         <div class="form-row"><input id="ticket-count" name="ticket-count" type="number" inputmode="numeric" min="1" max="10" step="1" value="10" required><button class="button button-primary" id="tickets-submit" type="submit">Criar cartelas <span aria-hidden="true">↗</span></button></div>
       </form>
@@ -40,7 +52,7 @@
       <div id="tickets-results" hidden>
         <div class="results-heading"><div><span class="results-kicker">SUAS COMBINAÇÕES</span><h3>Cartelas geradas</h3></div><span class="result-tag">15 DEZENAS</span></div>
         <p class="summary">Cada página mostra um grupo criado. Os jogos podem se repetir entre grupos.</p>
-        <div id="tickets-list" class="tickets-list"></div>
+        <p id="ticket-combinations" class="summary"></p><div id="tickets-list" class="tickets-list"></div>
         <nav class="pagination" aria-label="Navegação entre grupos de cartelas"><button id="previous-page" class="button button-outline" type="button">← Anterior</button><span id="page-indicator" aria-live="polite"></span><button id="next-page" class="button button-outline" type="button">Próxima →</button></nav>
         <p class="footnote">As combinações não garantem premiação e não são apostas registradas.</p>
       </div>

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { openDatabase } from './database/db.js';
 import { getFrequencyAnalysis } from './services/statistics.service.js';
 import { generateTickets, TicketInputError } from './services/tickets.service.js';
+import { generateFinalsTickets } from './services/finals.service.js';
 
 const portText = process.env.PORT ?? '3000';
 if (!/^\d+$/.test(portText) || Number(portText) < 1 || Number(portText) > 65535) {
@@ -32,7 +33,7 @@ const server = createServer(async (req, res) => {
     return;
   }
   const pathname = url.pathname;
-  if (pathname === '/api/tickets') {
+  if (pathname === '/api/tickets' || pathname === '/api/tickets/finais') {
     if (req.method !== 'POST') {
       res.writeHead(405, { Allow: 'POST', 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ error: 'Método não permitido.' }));
@@ -55,7 +56,7 @@ const server = createServer(async (req, res) => {
       let input: unknown;
       try { input = JSON.parse(Buffer.concat(chunks).toString('utf8')); }
       catch { throw new TicketInputError('JSON inválido.'); }
-      const result = generateTickets(input);
+      const result = pathname === '/api/tickets/finais' ? generateFinalsTickets(input) : generateTickets(input);
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify(result));
     } catch (error) {
