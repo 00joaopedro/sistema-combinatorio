@@ -17,7 +17,7 @@ const server = createServer(async (req, res) => {
     let raw = ''; for await (const chunk of req) raw += chunk; const body = JSON.parse(raw); requests.push(body);
     if (mode === 'failure') { res.statusCode = 422; return res.end(JSON.stringify({ error: 'Não há combinações suficientes.' })); }
     calls++;
-    return res.end(JSON.stringify({ cartelas: Array.from({length:body.quantidade}, () => Array.from({length:15}, (_,i) => i + 1)) }));
+    return res.end(JSON.stringify({ totalCombinacoesPossiveis: 100, cartelas: Array.from({length:body.quantidade}, () => Array.from({length:15}, (_,i) => i + 1)) }));
   }
   const files = { '/': ['public/index.html', 'text/html'], '/css/styles.css': ['public/css/styles.css', 'text/css'], '/js/app.js': ['public/js/app.js', 'text/javascript'] };
   const file = files[req.url];

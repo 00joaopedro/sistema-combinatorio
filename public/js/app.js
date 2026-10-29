@@ -2,7 +2,7 @@
 
 const byId = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
-const state = { excluded: new Set(), fixed: new Set(), batches: [], page: 0 };
+const state = { excluded: new Set(), fixed: new Set(), batches: [], totals: [], page: 0, mode: 'classic' };
 const selectors = [
   { key: 'excluded', other: 'fixed', grid: byId('excluded-grid'), count: byId('excluded-count'), max: 10, label: 'excluída' },
   { key: 'fixed', other: 'excluded', grid: byId('fixed-grid'), count: byId('fixed-count'), max: 12, label: 'fixa' },
@@ -38,6 +38,43 @@ for (const selector of selectors) {
   }
 }
 updateSelectors();
+
+const finalLabels = ['Nenhum', 'Apenas {0}', 'Apenas {1}', 'Apenas {2}', '{0} + {1}', '{0} + {2}', '{1} + {2}', 'Todas: {0} + {1} + {2}'];
+const finalValues = ['none', 'only_first', 'only_second', 'only_third', 'pair_1_2', 'pair_1_3', 'pair_2_3', 'all_three'];
+const finalRules = Array.from({ length: 5 }, () => new Set());
+let activeFinal = 0;
+function renderFinals() {
+  const tabs = byId('final-tabs'); const options = byId('final-patterns');
+  tabs.replaceChildren(); options.replaceChildren();
+  for (let i = 0; i < 5; i++) {
+    const tab = document.createElement('button'); tab.type = 'button'; tab.className = 'final-tab';
+    tab.textContent = `Final ${i + 1}`; tab.setAttribute('aria-pressed', String(i === activeFinal));
+    tab.addEventListener('click', () => { activeFinal = i; renderFinals(); }); tabs.append(tab);
+  }
+  const group = [activeFinal + 1, activeFinal + 11, activeFinal + 21].map(pad);
+  const title = document.createElement('p'); title.className = 'field-help'; title.textContent = `Final ${activeFinal + 1}: ${group.join(', ')} — marque os padrões para excluir.`; options.append(title);
+  finalLabels.forEach((text, index) => {
+    const label = document.createElement('label'); label.className = 'pattern-option';
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = finalValues[index]; checkbox.checked = finalRules[activeFinal].has(checkbox.value);
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) finalRules[activeFinal].add(checkbox.value); else finalRules[activeFinal].delete(checkbox.value);
+      byId('finals-summary').textContent = `Finais configurados: ${finalRules.filter(x => x.size).length} de 5`;
+    });
+    const description = document.createElement('span'); description.textContent = text.replace(/\{(\d)\}/g, (_, n) => group[Number(n)]);
+    label.append(checkbox, description); options.append(label);
+  });
+  byId('finals-summary').textContent = `Finais configurados: ${finalRules.filter(x => x.size).length} de 5`;
+}
+renderFinals();
+function setMode(mode) {
+  state.mode = mode;
+  byId('classic-mode').setAttribute('aria-pressed', String(mode === 'classic'));
+  byId('finals-mode').setAttribute('aria-pressed', String(mode === 'finals'));
+  byId('classic-options').hidden = mode !== 'classic'; byId('finals-options').hidden = mode !== 'finals';
+  message(byId('tickets-message'), '');
+}
+byId('classic-mode').addEventListener('click', () => setMode('classic'));
+byId('finals-mode').addEventListener('click', () => setMode('finals'));
 
 function message(element, text, kind = '') {
   element.textContent = text;
@@ -101,6 +138,7 @@ function renderBatch() {
     for (const number of ticket) { const square = document.createElement('span'); square.className = 'ticket-number'; square.textContent = pad(number); numbers.append(square); }
     card.append(heading, numbers); list.append(card);
   });
+  byId('ticket-combinations').textContent = `Combinações possíveis com as regras deste grupo: ${state.totals[state.page].toLocaleString('pt-BR')}.`;
   byId('page-indicator').textContent = `Grupo ${state.page + 1} de ${state.batches.length}`;
   byId('previous-page').disabled = state.page === 0;
   byId('next-page').disabled = state.page === state.batches.length - 1;
@@ -112,12 +150,13 @@ byId('tickets-form').addEventListener('submit', async event => {
   const status = byId('tickets-message');
   const quantity = getInteger(byId('ticket-count'), 1, 10);
   if (quantity === null) { message(status, 'Informe uma quantidade inteira de 1 a 10 jogos.', 'error'); return; }
-  const payload = { quantidade: quantity, excluidas: [...state.excluded], fixas: [...state.fixed] };
+  const mode = state.mode;
+  const payload = mode === 'classic' ? { quantidade: quantity, excluidas: [...state.excluded], fixas: [...state.fixed] } : { quantidade: quantity, columnRules: finalRules.map((rules, i) => ({ column: i + 1, excludePatterns: [...rules] })).filter(rule => rule.excludePatterns.length) };
   const button = byId('tickets-submit'); button.disabled = true;
   message(status, 'Criando cartelas...', 'loading');
   try {
-    const data = await getJson('/api/tickets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    state.batches.push(data.cartelas); state.page = state.batches.length - 1; renderBatch();
+    const data = await getJson(mode === 'classic' ? '/api/tickets' : '/api/tickets/finais', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    state.batches.push(data.cartelas); state.totals.push(data.totalCombinacoesPossiveis); state.page = state.batches.length - 1; renderBatch();
     message(status, `${data.cartelas.length} ${data.cartelas.length === 1 ? 'cartela criada' : 'cartelas criadas'}.`);
   } catch (error) { message(status, error.message, 'error'); }
   finally { button.disabled = false; }
