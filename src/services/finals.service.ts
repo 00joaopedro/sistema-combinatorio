@@ -28,13 +28,24 @@ export function generateFinalsTickets(input: unknown): TicketResult {
     const rule = item as Record<string, unknown>;
     if (!Number.isInteger(rule.column) || (rule.column as number) < 1 || (rule.column as number) > 5 || seen.has(rule.column as number)) throw new TicketInputError('Cada final de 1 a 5 deve aparecer apenas uma vez.');
     seen.add(rule.column as number);
-    if (!Array.isArray(rule.excludePatterns) || rule.excludePatterns.length > 8) throw new TicketInputError('Padrões de exclusão inválidos.');
+    const included = rule.includePatterns === undefined ? [] : rule.includePatterns;
+    if (!Array.isArray(included) || included.length > 8) throw new TicketInputError('Padrões de inclusão inválidos.');
+    const allowed = new Set<number>();
+    for (const pattern of included) {
+      const index = patterns.findIndex(p => p === pattern);
+      if (index < 0 || allowed.has(index)) throw new TicketInputError('Padrão de inclusão desconhecido ou repetido.');
+      allowed.add(index);
+    }
+    const excluded = rule.excludePatterns === undefined ? [] : rule.excludePatterns;
+    if (!Array.isArray(excluded) || excluded.length > 8) throw new TicketInputError('Padrões de exclusão inválidos.');
     const set = blocked[(rule.column as number) - 1];
-    for (const pattern of rule.excludePatterns) {
+    for (const pattern of excluded) {
       const index = patterns.findIndex(p => p === pattern);
       if (index < 0 || set.has(index)) throw new TicketInputError('Padrão de exclusão desconhecido ou repetido.');
+      if (allowed.has(index)) throw new TicketInputError('O mesmo padrão não pode ser incluído e excluído.');
       set.add(index);
     }
+    if (allowed.size) for (let index = 0; index < patterns.length; index++) if (!allowed.has(index)) set.add(index);
   }
   // Conta os completamentos possíveis para cada grupo e quantidade de dezenas ainda necessárias.
   const dp = Array.from({ length: 6 }, () => Array<number>(16).fill(0));

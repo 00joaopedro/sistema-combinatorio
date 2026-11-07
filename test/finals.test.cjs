@@ -31,3 +31,17 @@ test('rejeita dados inválidos sem afetar o modo clássico', () => {
   const classic=require('../dist/services/tickets.service.js').generateTickets({quantidade:2,fixas:[1],excluidas:[25]});
   assert.ok(classic.cartelas.every(t=>t.includes(1)&&!t.includes(25)));
 });
+
+test('inclusões alternativas respeitam padrões exatos e exclusões em outro final', () => {
+  const rules = [
+    {column:1, includePatterns:['only_first','pair_2_3']},
+    {column:2, excludePatterns:['all_three']},
+  ];
+  const result = generateFinalsTickets({quantidade:10,columnRules:rules});
+  assert.equal(result.totalCombinacoesPossiveis, choose(22,14)+choose(22,13)-choose(19,11)-choose(19,10));
+  for (const ticket of result.cartelas) {
+    assert.ok([1,6].includes(maskOf(ticket,1)));
+    assert.notEqual(maskOf(ticket,2),7);
+  }
+  assert.throws(() => generateFinalsTickets({quantidade:1,columnRules:[{column:1,includePatterns:['none'],excludePatterns:['none']}]}), /incluído e excluído/);
+});

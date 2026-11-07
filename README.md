@@ -65,3 +65,5 @@ Para testar o navegador localmente, instale Playwright e Chromium separadamente;
 ## Modo finais
 
 `POST /api/tickets/finais` recebe `quantidade` (1 a 10) e `columnRules`, por exemplo `{ "quantidade": 10, "columnRules": [{ "column": 1, "excludePatterns": ["none", "only_first"] }] }`. Cada grupo (1 a 5) contém as dezenas N, N+10 e N+20. Os padrões permitidos são `none`, `only_first`, `only_second`, `only_third`, `pair_1_2`, `pair_1_3`, `pair_2_3` e `all_three`; cada item escolhido exclui o padrão exato. Dezenas com finais de 6 a 0 são livres. A resposta inclui o número de combinações possíveis e jogos únicos por solicitação. Se as regras não comportarem a quantidade solicitada, o servidor retorna 422. O modo clássico permanece independente.
+
+Cada regra aceita `includePatterns` e `excludePatterns` opcionais. Se houver inclusões, o final deve corresponder exatamente a um dos padrões incluídos. As exclusões bloqueiam padrões exatos, e o mesmo padrão não pode ser incluído e excluído. As regras de finais diferentes se aplicam simultaneamente; a amostra aleatória não garante a presença de todos os padrões permitidos.

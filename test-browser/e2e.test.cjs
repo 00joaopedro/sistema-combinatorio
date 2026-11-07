@@ -58,6 +58,14 @@ test('navegador usa frontend, APIs e SQLite reais', async t => {
     const values=(await ticket.locator('.ticket-number').allTextContents()).map(Number);
     assert.ok([1,11,21].some(n=>values.includes(n)));
   }
+  await page.locator('#final-patterns input[value="include-only_first"]').check();
+  await page.locator('#final-patterns input[value="include-pair_2_3"]').check();
+  await page.locator('#tickets-submit').click();
+  await page.waitForFunction(() => document.querySelector('#page-indicator').textContent === 'Grupo 3 de 3');
+  for (const ticket of await page.locator('.ticket').all()) {
+    const values = (await ticket.locator('.ticket-number').allTextContents()).map(Number);
+    assert.ok(['1', '11,21'].includes([1,11,21].filter(n => values.includes(n)).join(',')));
+  }
   assert.match(await page.locator('#ticket-combinations').innerText(), /Combinações possíveis/);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
 

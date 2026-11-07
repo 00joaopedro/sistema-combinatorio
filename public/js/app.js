@@ -39,9 +39,10 @@ for (const selector of selectors) {
 }
 updateSelectors();
 
-const finalLabels = ['Nenhum', 'Apenas {0}', 'Apenas {1}', 'Apenas {2}', '{0} + {1}', '{0} + {2}', '{1} + {2}', 'Todas: {0} + {1} + {2}'];
+const finalLabels = ['Nenhum', 'Apenas {0}', 'Apenas {1}', 'Apenas {2}', 'Somente {0} + {1}', 'Somente {0} + {2}', 'Somente {1} + {2}', 'Todas: {0} + {1} + {2}'];
 const finalValues = ['none', 'only_first', 'only_second', 'only_third', 'pair_1_2', 'pair_1_3', 'pair_2_3', 'all_three'];
-const finalRules = Array.from({ length: 5 }, () => new Set());
+const finalRules = Array.from({ length: 5 }, () => ({ includePatterns: new Set(), excludePatterns: new Set() }));
+const configuredFinals = () => finalRules.filter(rule => rule.includePatterns.size || rule.excludePatterns.size).length;
 let activeFinal = 0;
 function renderFinals() {
   const tabs = byId('final-tabs'); const options = byId('final-patterns');
@@ -52,18 +53,33 @@ function renderFinals() {
     tab.addEventListener('click', () => { activeFinal = i; renderFinals(); }); tabs.append(tab);
   }
   const group = [activeFinal + 1, activeFinal + 11, activeFinal + 21].map(pad);
-  const title = document.createElement('p'); title.className = 'field-help'; title.textContent = `Final ${activeFinal + 1}: ${group.join(', ')} — marque os padrões para excluir.`; options.append(title);
+  const title = document.createElement('p'); title.className = 'field-help'; title.textContent = `Final ${activeFinal + 1}: ${group.join(', ')} — escolha os padrões exatos.`; options.append(title);
   finalLabels.forEach((text, index) => {
-    const label = document.createElement('label'); label.className = 'pattern-option';
-    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = finalValues[index]; checkbox.checked = finalRules[activeFinal].has(checkbox.value);
-    checkbox.addEventListener('change', () => {
-      if (checkbox.checked) finalRules[activeFinal].add(checkbox.value); else finalRules[activeFinal].delete(checkbox.value);
-      byId('finals-summary').textContent = `Finais configurados: ${finalRules.filter(x => x.size).length} de 5`;
-    });
-    const description = document.createElement('span'); description.textContent = text.replace(/\{(\d)\}/g, (_, n) => group[Number(n)]);
-    label.append(checkbox, description); options.append(label);
+    const row = document.createElement('div');
+    const pattern = finalValues[index];
+    const description = text.replace(/\{(\d)\}/g, (_, n) => group[Number(n)]);
+    const title = document.createElement('strong'); title.textContent = description; row.append(title);
+    const rule = finalRules[activeFinal];
+    const inputs = {};
+    for (const [key, action] of [['includePatterns', 'Incluir'], ['excludePatterns', 'Excluir']]) {
+      const label = document.createElement('label'); label.className = 'pattern-option';
+      const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
+      checkbox.value = key === 'excludePatterns' ? pattern : 'include-' + pattern;
+      checkbox.checked = rule[key].has(pattern);
+      checkbox.setAttribute('aria-label', action + ' ' + description);
+      inputs[key] = checkbox;
+      checkbox.addEventListener('change', () => {
+        const other = key === 'includePatterns' ? 'excludePatterns' : 'includePatterns';
+        if (checkbox.checked) {
+          rule[key].add(pattern); rule[other].delete(pattern); inputs[other].checked = false;
+        } else rule[key].delete(pattern);
+        byId('finals-summary').textContent = 'Finais configurados: ' + configuredFinals() + ' de 5';
+      });
+      label.append(checkbox, action); row.append(label);
+    }
+    options.append(row);
   });
-  byId('finals-summary').textContent = `Finais configurados: ${finalRules.filter(x => x.size).length} de 5`;
+  byId('finals-summary').textContent = `Finais configurados: ${configuredFinals()} de 5`;
 }
 renderFinals();
 function setMode(mode) {
@@ -151,7 +167,7 @@ byId('tickets-form').addEventListener('submit', async event => {
   const quantity = getInteger(byId('ticket-count'), 1, 10);
   if (quantity === null) { message(status, 'Informe uma quantidade inteira de 1 a 10 jogos.', 'error'); return; }
   const mode = state.mode;
-  const payload = mode === 'classic' ? { quantidade: quantity, excluidas: [...state.excluded], fixas: [...state.fixed] } : { quantidade: quantity, columnRules: finalRules.map((rules, i) => ({ column: i + 1, excludePatterns: [...rules] })).filter(rule => rule.excludePatterns.length) };
+  const payload = mode === 'classic' ? { quantidade: quantity, excluidas: [...state.excluded], fixas: [...state.fixed] } : { quantidade: quantity, columnRules: finalRules.map((rules, i) => ({ column: i + 1, includePatterns: [...rules.includePatterns], excludePatterns: [...rules.excludePatterns] })).filter(rule => rule.includePatterns.length || rule.excludePatterns.length) };
   const button = byId('tickets-submit'); button.disabled = true;
   message(status, 'Criando cartelas...', 'loading');
   try {
