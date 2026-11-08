@@ -69,4 +69,26 @@ test('navegador usa frontend, APIs e SQLite reais', async t => {
   assert.match(await page.locator('#ticket-combinations').innerText(), /Combinações possíveis/);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
 
+  await page.locator('#final-patterns input[value="include-pair_2_3"]').uncheck();
+  for (let i = 1; i < 5; i++) {
+    await page.locator('#final-tabs button').nth(i).click();
+    await page.locator('#final-patterns input[value="include-only_first"]').check();
+  }
+  await page.locator('#finals-summary').click();
+  assert.equal(await page.locator('#current-filter-list li:visible').count(), 5);
+  await page.locator('#finals-summary').click();
+  assert.equal(await page.locator('#current-filter-list').isHidden(), true);
+  await page.locator('#tickets-submit').click();
+  await page.waitForFunction(() => document.querySelector('#page-indicator').textContent === 'Grupo 4 de 4');
+  assert.equal(await page.locator('.ticket').count(), 1);
+  assert.match(await page.locator('#tickets-message').innerText(), /único jogo disponível/);
+  await page.locator('#dismiss-ticket-message').click();
+  assert.equal(await page.locator('#dismiss-ticket-message').isHidden(), true);
+  await page.locator('#batch-filters summary').click();
+  assert.equal(await page.locator('#batch-filter-list li:visible').count(), 5);
+  await page.locator('#final-patterns input[value="include-only_first"]').uncheck();
+  assert.equal(await page.locator('#stale-filters').isVisible(), true);
+  await page.locator('#dismiss-stale').click();
+  assert.equal(await page.locator('#stale-filters').isHidden(), true);
+
 });
