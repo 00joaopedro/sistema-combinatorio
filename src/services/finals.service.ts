@@ -12,7 +12,7 @@ function choose(n: number, k: number): number {
 }
 function bitCount(mask: number): number { return (mask & 1) + ((mask >> 1) & 1) + ((mask >> 2) & 1); }
 
-export function generateFinalsTickets(input: unknown): TicketResult {
+export function generateFinalsTickets(input: unknown): TicketResult & { quantidadeGerada: number } {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TicketInputError('Envie um objeto JSON válido.');
   const options = input as Record<string, unknown>;
   const quantity = options.quantidade;
@@ -56,10 +56,11 @@ export function generateFinalsTickets(input: unknown): TicketResult {
     }
   }
   const total = dp[0][15];
-  if ((quantity as number) > total) throw new TicketInputError(`As regras permitem apenas ${total} combinações. Ajuste os filtros ou a quantidade.`, 422);
+  if (total === 0) throw new TicketInputError('Nenhum jogo possível com esses filtros. Altere uma ou mais opções.', 422);
+  const generated = Math.min(quantity as number, total);
   const swaps = new Map<number, number>();
   const cartelas: number[][] = [];
-  for (let i = 0; i < (quantity as number); i++) {
+  for (let i = 0; i < generated; i++) {
     const picked = randomInt(i, total);
     let rank = swaps.get(picked) ?? picked;
     swaps.set(picked, swaps.get(i) ?? i);
@@ -86,5 +87,5 @@ export function generateFinalsTickets(input: unknown): TicketResult {
     }
     cartelas.push(ticket.sort((a, b) => a - b));
   }
-  return { quantidadeSolicitada: quantity as number, totalCombinacoesPossiveis: total, cartelas };
+  return { quantidadeSolicitada: quantity as number, totalCombinacoesPossiveis: total, quantidadeGerada: cartelas.length, cartelas };
 }

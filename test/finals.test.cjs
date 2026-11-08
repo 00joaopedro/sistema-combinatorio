@@ -20,8 +20,11 @@ test('conta combinações, respeita regras combinadas e lida com ausência de re
   const rules=Array.from({length:5},(_,i)=>({column:i+1,excludePatterns:patterns.filter((_,j)=>j!==7)}));
   const only=generateFinalsTickets({quantidade:1,columnRules:rules});
   assert.equal(only.totalCombinacoesPossiveis,1); assert.deepEqual(only.cartelas[0],[1,2,3,4,5,11,12,13,14,15,21,22,23,24,25]);
-  assert.throws(()=>generateFinalsTickets({quantidade:2,columnRules:rules}),/apenas 1 combinações/);
-  assert.throws(()=>generateFinalsTickets({quantidade:1,columnRules:[{column:1,excludePatterns:patterns}]}),/apenas 0 combinações/);
+  const partial = generateFinalsTickets({quantidade:10,columnRules:rules});
+  assert.equal(partial.quantidadeSolicitada,10);
+  assert.equal(partial.quantidadeGerada,1);
+  assert.deepEqual(partial.cartelas,only.cartelas);
+  assert.throws(()=>generateFinalsTickets({quantidade:1,columnRules:[{column:1,excludePatterns:patterns}]}),/Nenhum jogo possível/);
 });
 
 test('rejeita dados inválidos sem afetar o modo clássico', () => {
@@ -44,4 +47,15 @@ test('inclusões alternativas respeitam padrões exatos e exclusões em outro fi
     assert.notEqual(maskOf(ticket,2),7);
   }
   assert.throws(() => generateFinalsTickets({quantidade:1,columnRules:[{column:1,includePatterns:['none'],excludePatterns:['none']}]}), /incluído e excluído/);
+});
+
+test('gera dois jogos únicos quando cinco finais restringem o total a dois', () => {
+  const rules = Array.from({length:5}, (_,i) => ({column:i+1, includePatterns:i === 0 ? ['only_first','only_second'] : ['only_first']}));
+  const result = generateFinalsTickets({quantidade:10,columnRules:rules});
+  assert.equal(result.totalCombinacoesPossiveis,2);
+  assert.equal(result.quantidadeGerada,2);
+  assert.deepEqual(result.cartelas.map(ticket => [1,11].find(n => ticket.includes(n))).sort((a,b)=>a-b),[1,11]);
+  assert.ok(result.cartelas.every(ticket => ticket.length === 15 && new Set(ticket).size === 15 && [2,3,4,5,6,7,8,9,10,16,17,18,19,20].every(n => ticket.includes(n))));
+  rules[0].includePatterns = ['none'];
+  assert.throws(() => generateFinalsTickets({quantidade:10,columnRules:rules}), /Nenhum jogo possível/);
 });

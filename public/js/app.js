@@ -2,7 +2,7 @@
 
 const byId = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
-const state = { excluded: new Set(), fixed: new Set(), batches: [], totals: [], page: 0, mode: 'classic' };
+const state = { excluded: new Set(), fixed: new Set(), batches: [], totals: [], configs: [], page: 0, mode: 'classic' };
 const selectors = [
   { key: 'excluded', other: 'fixed', grid: byId('excluded-grid'), count: byId('excluded-count'), max: 10, label: 'excluída' },
   { key: 'fixed', other: 'excluded', grid: byId('fixed-grid'), count: byId('fixed-count'), max: 12, label: 'fixa' },
@@ -73,20 +73,52 @@ function renderFinals() {
         if (checkbox.checked) {
           rule[key].add(pattern); rule[other].delete(pattern); inputs[other].checked = false;
         } else rule[key].delete(pattern);
-        byId('finals-summary').textContent = 'Finais configurados: ' + configuredFinals() + ' de 5';
+        refreshFilters();
       });
       label.append(checkbox, action); row.append(label);
     }
     options.append(row);
   });
-  byId('finals-summary').textContent = `Finais configurados: ${configuredFinals()} de 5`;
+  refreshFilters();
 }
+function currentRules() {
+  return finalRules.map((rule, i) => ({ column: i + 1, includePatterns: [...rule.includePatterns].sort(), excludePatterns: [...rule.excludePatterns].sort() }))
+    .filter(rule => rule.includePatterns.length || rule.excludePatterns.length);
+}
+function renderRules(id, rules) {
+  const list = byId(id);
+  list.replaceChildren();
+  for (let column = 1; column <= 5; column++) {
+    const rule = rules.find(item => item.column === column);
+    const label = pattern => finalLabels[finalValues.indexOf(pattern)].replace(/\{(\d)\}/g, (_, digit) => pad(column + 10 * Number(digit)));
+    const parts = [];
+    if (rule?.includePatterns.length) parts.push('Incluir: ' + rule.includePatterns.map(label).join(', '));
+    if (rule?.excludePatterns.length) parts.push('Excluir: ' + rule.excludePatterns.map(label).join(', '));
+    const row = document.createElement('li');
+    row.textContent = 'Final ' + column + ' — ' + (parts.join('; ') || 'Sem filtros');
+    list.append(row);
+  }
+}
+function refreshFilters() {
+  byId('finals-summary').textContent = 'Ver filtros · ' + configuredFinals() + ' de 5 finais configurados';
+  renderRules('current-filter-list', currentRules());
+  refreshStale();
+}
+function refreshStale() {
+  const saved = state.configs[state.page];
+  byId('stale-filters').hidden = !saved || (state.mode === 'finals' && JSON.stringify(saved) === JSON.stringify(currentRules()));
+}
+byId('dismiss-stale').addEventListener('click', () => { byId('stale-filters').hidden = true; });
+byId('dismiss-ticket-message').addEventListener('click', () => message(byId('tickets-message'), ''));
+
 renderFinals();
 function setMode(mode) {
   state.mode = mode;
   byId('classic-mode').setAttribute('aria-pressed', String(mode === 'classic'));
   byId('finals-mode').setAttribute('aria-pressed', String(mode === 'finals'));
   byId('classic-options').hidden = mode !== 'classic'; byId('finals-options').hidden = mode !== 'finals';
+  byId('current-filters').hidden = mode !== 'finals';
+  refreshStale();
   message(byId('tickets-message'), '');
 }
 byId('classic-mode').addEventListener('click', () => setMode('classic'));
@@ -95,6 +127,7 @@ byId('finals-mode').addEventListener('click', () => setMode('finals'));
 function message(element, text, kind = '') {
   element.textContent = text;
   element.className = `message ${kind}`.trim();
+  if (element.id === 'tickets-message') byId('dismiss-ticket-message').hidden = !text || !['error', 'warning'].includes(kind);
 }
 function getInteger(input, min, max) {
   if (!input.value || !input.validity.valid || !Number.isInteger(input.valueAsNumber) || input.valueAsNumber < min || input.valueAsNumber > max) return null;
@@ -143,6 +176,12 @@ byId('frequency-form').addEventListener('submit', async event => {
 
 function renderBatch() {
   const batch = state.batches[state.page];
+  const saved = state.configs[state.page];
+  const details = byId('batch-filters');
+  details.hidden = !saved;
+  details.open = false;
+  if (saved) renderRules('batch-filter-list', saved);
+  refreshStale();
   const list = byId('tickets-list'); list.replaceChildren();
   const start = state.batches.slice(0, state.page).reduce((count, group) => count + group.length, 0);
   batch.forEach((ticket, index) => {
@@ -167,13 +206,17 @@ byId('tickets-form').addEventListener('submit', async event => {
   const quantity = getInteger(byId('ticket-count'), 1, 10);
   if (quantity === null) { message(status, 'Informe uma quantidade inteira de 1 a 10 jogos.', 'error'); return; }
   const mode = state.mode;
-  const payload = mode === 'classic' ? { quantidade: quantity, excluidas: [...state.excluded], fixas: [...state.fixed] } : { quantidade: quantity, columnRules: finalRules.map((rules, i) => ({ column: i + 1, includePatterns: [...rules.includePatterns], excludePatterns: [...rules.excludePatterns] })).filter(rule => rule.includePatterns.length || rule.excludePatterns.length) };
+  const payload = mode === 'classic' ? { quantidade: quantity, excluidas: [...state.excluded], fixas: [...state.fixed] } : { quantidade: quantity, columnRules: currentRules() };
   const button = byId('tickets-submit'); button.disabled = true;
   message(status, 'Criando cartelas...', 'loading');
   try {
     const data = await getJson(mode === 'classic' ? '/api/tickets' : '/api/tickets/finais', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    state.configs.push(mode === 'finals' ? payload.columnRules : null);
     state.batches.push(data.cartelas); state.totals.push(data.totalCombinacoesPossiveis); state.page = state.batches.length - 1; renderBatch();
-    message(status, `${data.cartelas.length} ${data.cartelas.length === 1 ? 'cartela criada' : 'cartelas criadas'}.`);
+    if (data.cartelas.length < quantity) {
+      const count = data.cartelas.length;
+      message(status, `Você pediu ${quantity} jogos. Os filtros permitem ${count}; ${count === 1 ? 'o único jogo disponível foi criado' : 'todos os jogos disponíveis foram criados'}.`, 'warning');
+    } else message(status, `${data.cartelas.length} ${data.cartelas.length === 1 ? 'cartela criada' : 'cartelas criadas'}.`);
   } catch (error) { message(status, error.message, 'error'); }
   finally { button.disabled = false; }
 });
